@@ -1,0 +1,79 @@
+version: '3.9'
+services:
+  frontend:
+    build:
+      dockerfile: ./apps/frontend-app/Dockerfile
+      target: development
+      context: .
+    command: npm run serve:frontend-app
+    ports:
+      - "3010:4200"
+    environment:
+      API_1_URL: api-1
+      API_2_URL: api-2
+    depends_on:
+      - api-1
+      - api-2
+    volumes:
+      - .:/app
+      - /app/node_modules
+  api-1:
+    build:
+      dockerfile: ./apps/api-1/Dockerfile
+      target: development
+      context: .
+    command: npm run serve:api-1
+    expose:
+      - 3333
+    ports:
+      - "4010:3333"
+      - "9010:9669"
+    depends_on:
+      - db
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5010
+      DATABASE_USER: api1
+      DATABASE_NAME: api1
+      DATABASE_PASSWORD: TopSecret123
+    volumes:
+      - .:/app
+      - /app/node_modules
+  api-2:
+    build:
+      dockerfile: ./apps/api-2/Dockerfile
+      target: development
+      context: .
+    command: npm run serve:api-2
+    expose:
+      - 3333
+    ports:
+      - "4020:3333"
+      - "9020:9669"
+    depends_on:
+      - db
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5010
+      DATABASE_USER: api2
+      DATABASE_NAME: api2
+      DATABASE_PASSWORD: TopSecret123
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+  db:
+    image: postgres:15-alpine
+    ports:
+      - '5010:5432'
+    volumes:
+      - ./docker-postgres-multiple-dbs.sh:/docker-entrypoint-initdb.d/docker-postgres-multiple-dbs.sh
+    environment:
+      POSTGRES_USER: nxsuperuser
+      POSTGRES_PASSWORD: TopSecret123
+      POSTGRES_DB_NAMES: api1,api2
+
+networks:
+  default:
+    name: example_dev_network
+    driver: bridge
